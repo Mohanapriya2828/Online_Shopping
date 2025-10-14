@@ -8,21 +8,22 @@
   <div id="authSection">
     <div class="container">
       <h2>Welcome to ShopEase</h2>
+
       <div id="loginForm">
         <input type="email" id="email" placeholder="Email" />
         <input type="password" id="password" placeholder="Password" />
-        <button onclick="login()">Login</button>
+        <button id="loginBtn">Login</button>
         <p>Not registered? <span id="showSignup">Sign up here</span></p>
-        <button onclick="googleLogin()" id="googleBtn">Sign in with Google</button>
+        <button id="googleBtn">Sign in with Google</button>
         <p id="loginMessage"></p>
       </div>
 
       <div id="signupForm" style="display:none;">
         <input type="email" id="signupEmail" placeholder="Email" />
         <input type="password" id="signupPassword" placeholder="Password" />
-        <button onclick="signup()">Sign up</button>
+        <button id="signupBtn">Sign up</button>
         <p>Already registered? <span id="showLogin">Login here</span></p>
-        <button onclick="googleLogin()" id="googleBtn2">Sign up with Google</button>
+        <button id="googleBtn2">Sign up with Google</button>
         <p id="signupMessage"></p>
       </div>
     </div>
@@ -35,14 +36,16 @@
         <input type="text" id="searchBar" placeholder="Search products..." />
       </div>
       <div class="top-right">
-        <span id="wishlistBtn" class="icon">❤</span>
-        <span id="cartBtn" class="icon">🛒</span>
-        <span id="logoutBtn" class="icon">Logout</span>
+        <span id="wishlistBtn">❤</span>
+        <span id="cartBtn">🛒</span>
+        <span id="logoutBtn">Logout</span>
       </div>
     </header>
-    <main>
-      <div id="productList"></div>
-    </main>
+
+    <div class="home-content">
+      <aside id="sidebar"></aside>
+      <main id="productList"></main>
+    </div>
   </div>
 
   <script src="Js_folder/config.js"></script>

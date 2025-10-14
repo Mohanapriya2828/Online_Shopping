@@ -1,42 +1,59 @@
+// ----------------- AUTH.JS -----------------
+
+// Signup function
 async function signup() {
   const email = document.getElementById("signupEmail").value;
   const password = document.getElementById("signupPassword").value;
 
-  const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, returnSecureToken: true })
-  });
+  try {
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, returnSecureToken: true })
+    });
 
-  const data = await res.json();
-  if (data.error) {
-    alert("Signup failed: " + data.error.message);
-    return;
+    const data = await res.json();
+
+    if (data.error) {
+      alert("Signup failed: " + data.error.message);
+      return;
+    }
+
+    createUserDocument(data.localId, data.idToken, email, "user");
+    showMessage('signupMessage', 'Registration successful!');
+    showHomePage(email);
+
+  } catch (err) {
+    console.error(err);
+    alert("Signup error: " + err.message);
   }
-
-  createUserDocument(data.localId, data.idToken, email, "user");
-  showMessage('signupMessage', 'Registration successful!');
-  showHomePage(email);
 }
 
 async function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
-  const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password, returnSecureToken: true })
-  });
+  try {
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, returnSecureToken: true })
+    });
 
-  const data = await res.json();
-  if (data.error) {
-    alert("Login failed: " + data.error.message);
-    return;
+    const data = await res.json();
+
+    if (data.error) {
+      alert("Login failed: " + data.error.message);
+      return;
+    }
+
+    showMessage('loginMessage', 'Login successful!');
+    showHomePage(email);
+
+  } catch (err) {
+    console.error(err);
+    alert("Login error: " + err.message);
   }
-
-  showMessage('loginMessage', 'Login successful!');
-  showHomePage(email);
 }
 
 async function googleLogin() {
@@ -85,18 +102,17 @@ function showMessage(elementId, message) {
 }
 
 function showHomePage(email) {
-  document.getElementById("loginForm").style.display = "none";
-  document.getElementById("signupForm").style.display = "none";
-  document.getElementById("homepage").style.display = "block";
-
-  const heading = document.querySelector("#homepage h2");
+  document.getElementById("authSection").style.display = "none";
+  document.getElementById("homeSection").style.display = "block";
+  const heading = document.getElementById("welcomeText");
   if (heading) heading.textContent = `Welcome, ${email}`;
+
+  if (window.renderSidebar) window.renderSidebar();
 }
 
 function logout() {
-  document.getElementById("homepage").style.display = "none";
-  document.getElementById("loginForm").style.display = "block";
-  document.getElementById("signupForm").style.display = "none";
+  document.getElementById("homeSection").style.display = "none";
+  document.getElementById("authSection").style.display = "block";
 }
 
 function viewCart() {
@@ -106,6 +122,41 @@ function viewCart() {
 function viewWishlist() {
   alert("Wishlist clicked! Implement wishlist view here.");
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const loginBtn = document.getElementById("loginBtn");
+  if (loginBtn) loginBtn.addEventListener("click", login);
+
+  const signupBtn = document.getElementById("signupBtn");
+  if (signupBtn) signupBtn.addEventListener("click", signup);
+
+  const googleBtn = document.getElementById("googleBtn");
+  if (googleBtn) googleBtn.addEventListener("click", googleLogin);
+
+  const googleBtn2 = document.getElementById("googleBtn2");
+  if (googleBtn2) googleBtn2.addEventListener("click", googleLogin);
+
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) logoutBtn.addEventListener("click", logout);
+
+  const showSignup = document.getElementById("showSignup");
+  if (showSignup) showSignup.addEventListener("click", () => {
+    document.getElementById("loginForm").style.display = "none";
+    document.getElementById("signupForm").style.display = "block";
+  });
+
+  const showLogin = document.getElementById("showLogin");
+  if (showLogin) showLogin.addEventListener("click", () => {
+    document.getElementById("signupForm").style.display = "none";
+    document.getElementById("loginForm").style.display = "block";
+  });
+
+  const cartBtn = document.getElementById("cartBtn");
+  if (cartBtn) cartBtn.addEventListener("click", viewCart);
+
+  const wishlistBtn = document.getElementById("wishlistBtn");
+  if (wishlistBtn) wishlistBtn.addEventListener("click", viewWishlist);
+});
 
 window.signup = signup;
 window.login = login;
