@@ -127,3 +127,25 @@ main {
     height: 150px;
     object-fit: contain;
 }
+
+.subcategory-list {
+    margin-left: 15px;
+    margin-top: 5px;
+    list-style: circle;
+    display: none;
+    padding-left: 10px;
+}
+
+.subcategory-list.show {
+    display: block;
+}
+
+.subcategory-list li {
+    font-size: 14px;
+    padding: 4px 0;
+    cursor: pointer;
+}
+
+.subcategory-list li:hover {
+    text-decoration: underline;
+}

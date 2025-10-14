@@ -1,6 +1,3 @@
-// ----------------- AUTH.JS -----------------
-
-// Signup function
 async function signup() {
   const email = document.getElementById("signupEmail").value;
   const password = document.getElementById("signupPassword").value;

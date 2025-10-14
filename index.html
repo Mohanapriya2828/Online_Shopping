@@ -8,7 +8,6 @@
   <div id="authSection">
     <div class="container">
       <h2>Welcome to ShopEase</h2>
-
       <div id="loginForm">
         <input type="email" id="email" placeholder="Email" />
         <input type="password" id="password" placeholder="Password" />
@@ -17,7 +16,6 @@
         <button id="googleBtn">Sign in with Google</button>
         <p id="loginMessage"></p>
       </div>
-
       <div id="signupForm" style="display:none;">
         <input type="email" id="signupEmail" placeholder="Email" />
         <input type="password" id="signupPassword" placeholder="Password" />
@@ -43,8 +41,14 @@
     </header>
 
     <div class="home-content">
-      <aside id="sidebar"></aside>
-      <main id="productList"></main>
+      <aside id="sidebar">
+        <h3>Categories</h3>
+        <ul id="categoriesList">
+        </ul>
+      </aside>
+      <main id="productsContainer">
+        <p>Select a category and subcategory to view products.</p>
+      </main>
     </div>
   </div>
 
