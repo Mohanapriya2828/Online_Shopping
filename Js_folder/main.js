@@ -222,3 +222,81 @@ document.addEventListener("DOMContentLoaded", ()=>{
   renderSidebar();
 });
 
+async function renderCart() {
+  if (!window.currentUserId) return alert("Login first");
+
+  const res = await fetch(`${BASE_URL}/carts`);
+  const data = await res.json();
+  const carts = (data.documents || []).filter(c => c.fields.userId.stringValue === window.currentUserId);
+
+  const cartItems = document.getElementById("cartItems");
+  cartItems.innerHTML = "";
+
+  if (carts.length === 0) {
+    cartItems.innerHTML = "<p>Your cart is empty.</p>";
+  } else {
+    carts.forEach(c => {
+      const prodId = c.fields.productId.stringValue;
+      const quantity = c.fields.quantity.integerValue;
+
+      const prod = allProducts.find(p => p.productId === prodId);
+      if (prod) {
+        const div = document.createElement("div");
+        div.className = "cart-item";
+        div.innerHTML = `
+          <p><strong>${prod.title}</strong> - ₹${prod.price} x ${quantity}</p>
+        `;
+        cartItems.appendChild(div);
+      }
+    });
+  }
+
+  document.getElementById("cartContainer").style.display = "block";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const cartBtn = document.getElementById("cartBtn");
+  const cartContainer = document.getElementById("cartContainer");
+  const closeCartBtn = document.getElementById("closeCartBtn");
+
+  cartBtn.addEventListener("click", async () => {
+    if (!window.currentUserId) {
+      alert("Login first to view cart!");
+      return;
+    }
+    cartContainer.style.display = "block";
+    const cartItemsDiv = document.getElementById("cartItems");
+    cartItemsDiv.innerHTML = "<p>Loading cart...</p>";
+
+    const cartData = await fetchCart(window.currentUserId);
+    if (cartData.length === 0) {
+      cartItemsDiv.innerHTML = "<p>Your cart is empty.</p>";
+      return;
+    }
+
+    cartItemsDiv.innerHTML = "";
+    cartData.forEach(item => {
+      const div = document.createElement("div");
+      div.style.borderBottom = "1px solid #ccc";
+      div.style.padding = "5px 0";
+      div.innerHTML = `
+        <p>Product ID: ${item.fields.productId.stringValue}</p>
+        <p>Quantity: ${item.fields.quantity.integerValue}</p>
+        <p>Added At: ${new Date(item.fields.addedAt.timestampValue).toLocaleString()}</p>
+      `;
+      cartItemsDiv.appendChild(div);
+    });
+  });
+
+  closeCartBtn.addEventListener("click", () => {
+    cartContainer.style.display = "none";
+  });
+});
+document.getElementById("cartBtn").addEventListener("click", () => {
+  if (!window.currentUserId) {
+    alert("Login first to view cart!");
+    return;
+  }
+  renderCart(); 
+});
+
