@@ -1,21 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Firebase Auth Example</title>
+  <title>Online Shopping App</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div id="authSection">
+    <div class="container">
+      <h2>Welcome to ShopEase</h2>
+      <div id="loginForm">
+        <input type="email" id="email" placeholder="Email" />
+        <input type="password" id="password" placeholder="Password" />
+        <button onclick="login()">Login</button>
+        <p>Not registered? <span id="showSignup">Sign up here</span></p>
+        <button onclick="googleLogin()" id="googleBtn">Sign in with Google</button>
+        <p id="loginMessage"></p>
+      </div>
 
-  <div class="container">
-    <h2>Signup / Login</h2>
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="signup()">Signup</button>
-    <button onclick="login()">Login</button>
-    <h2>Google Sign-In</h2>
-    <button id="googleBtn">Sign in with Google</button>
+      <div id="signupForm" style="display:none;">
+        <input type="email" id="signupEmail" placeholder="Email" />
+        <input type="password" id="signupPassword" placeholder="Password" />
+        <button onclick="signup()">Sign up</button>
+        <p>Already registered? <span id="showLogin">Login here</span></p>
+        <button onclick="googleLogin()" id="googleBtn2">Sign up with Google</button>
+        <p id="signupMessage"></p>
+      </div>
+    </div>
   </div>
 
-  <script src="app.js"></script>
+  <div id="homeSection" style="display:none;">
+    <header>
+      <div class="logo">ShopEase</div>
+      <div class="search-bar">
+        <input type="text" id="searchBar" placeholder="Search products..." />
+      </div>
+      <div class="top-right">
+        <span id="wishlistBtn" class="icon">❤</span>
+        <span id="cartBtn" class="icon">🛒</span>
+        <span id="logoutBtn" class="icon">Logout</span>
+      </div>
+    </header>
+    <main>
+      <div id="productList"></div>
+    </main>
+  </div>
+
+  <script src="Js_folder/config.js"></script>
+  <script src="Js_folder/firestore.js"></script>
+  <script src="Js_folder/auth.js"></script>
+  <script src="Js_folder/main.js"></script>
 </body>
 </html>
