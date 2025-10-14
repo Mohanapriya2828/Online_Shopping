@@ -89,7 +89,6 @@ async function createUserDocument(uid, idToken, email, role) {
       }
     })
   });
-
   const data = await res.json();
   console.log("Firestore user created:", data);
 }
