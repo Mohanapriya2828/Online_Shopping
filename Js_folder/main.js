@@ -100,7 +100,6 @@ async function renderCart(){
   });
 }
 
-
 async function addToWishlist(productId){
   if(!window.currentUserId) return alert("Login first");
 
@@ -114,19 +113,27 @@ async function addToWishlist(productId){
     }
   };
 
-  const res = await fetch(`${BASE_URL}/wishlists?documentId=${docId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+  try {
+    const res = await fetch(`${BASE_URL}/wishlists?documentId=${docId}`, {
+      method: "POST", 
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-  if(res.ok) alert("Added to wishlist!");
-  else {
-    const err = await res.json();
+    if(!res.ok) {
+      const errData = await res.json();
+      console.error("Error adding to wishlist:", errData);
+      return alert("Failed to add to wishlist");
+    }
+
+    alert("Added to wishlist!");
+  } catch(err){
     console.error(err);
-    alert("Failed to add to wishlist");
+    alert("Error adding to wishlist");
   }
 }
+
+   
 
 
 function renderPagination(){
@@ -254,6 +261,66 @@ async function renderCart() {
 
   document.getElementById("cartContainer").style.display = "block";
 }
+
+async function fetchWishlist() {
+  if (!window.currentUserId) return [];
+  const res = await fetch(`${BASE_URL}/wishlists`);
+  const data = await res.json();
+  return (data.documents || []).filter(w => w.fields.userId.stringValue === window.currentUserId);
+}
+
+async function renderWishlist() {
+  if (!window.currentUserId) return alert("Login first");
+
+  const wishlistItemsDiv = document.getElementById("wishlistItems");
+  wishlistItemsDiv.innerHTML = "<p>Loading wishlist...</p>";
+
+  const wishlistData = await fetchWishlist();
+  wishlistItemsDiv.innerHTML = "";
+
+  if (wishlistData.length === 0) {
+    wishlistItemsDiv.innerHTML = "<p>Your wishlist is empty.</p>";
+    return;
+  }
+
+  wishlistData.forEach(item => {
+    const prodId = item.fields.productId.stringValue;
+    const prod = allProducts.find(p => p.productId === prodId);
+
+    if (prod) {
+      const div = document.createElement("div");
+      div.className = "wishlist-item";
+      div.style.borderBottom = "1px solid #ccc";
+      div.style.padding = "5px 0";
+      div.innerHTML = `
+        <p><strong>${prod.title}</strong></p>
+        <p>Price: ₹${prod.price}</p>
+        <p>Rating: ${prod.rating} ⭐</p>
+      `;
+      wishlistItemsDiv.appendChild(div);
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const wishlistBtn = document.getElementById("wishlistBtn");
+  const wishlistContainer = document.getElementById("wishlistContainer");
+  const closeWishlistBtn = document.getElementById("closeWishlistBtn");
+
+  wishlistBtn.addEventListener("click", () => {
+    if (!window.currentUserId) {
+      alert("Login first to view wishlist!");
+      return;
+    }
+    wishlistContainer.style.display = "block";
+    renderWishlist();
+  });
+
+  closeWishlistBtn.addEventListener("click", () => {
+    wishlistContainer.style.display = "none";
+  });
+});
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const cartBtn = document.getElementById("cartBtn");
