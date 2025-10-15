@@ -21,6 +21,7 @@ async function fetchAllProducts(){
   const res = await fetch(`${BASE_URL}/products`);
   const data = await res.json();
   return (data.documents||[]).map(d=>({
+    docId: d.name.split("/").pop(),
     catId: d.fields.catId.stringValue,
     subCatId: d.fields.subCatId.stringValue,
     title: d.fields.title.stringValue,
@@ -72,35 +73,6 @@ async function fetchCart(){
   return (data.documents || []).filter(c => c.fields.userId.stringValue === window.currentUserId);
 }
 
-async function renderCart(){
-  const cartItems = await fetchCart();
-  let cartContainer = document.getElementById("cartContainer");
-  if(!cartContainer){
-    cartContainer = document.createElement("div");
-    cartContainer.id = "cartContainer";
-    cartContainer.style.position = "fixed";
-    cartContainer.style.right = "10px";
-    cartContainer.style.top = "60px";
-    cartContainer.style.width = "300px";
-    cartContainer.style.maxHeight = "400px";
-    cartContainer.style.overflowY = "auto";
-    cartContainer.style.backgroundColor = "#fff";
-    cartContainer.style.border = "1px solid #ccc";
-    cartContainer.style.padding = "10px";
-    cartContainer.style.zIndex = "1000";
-    document.body.appendChild(cartContainer);
-  }
-  cartContainer.innerHTML = "<h3>Your Cart</h3>";
-  if(cartItems.length === 0){
-    cartContainer.innerHTML += "<p>Cart is empty</p>";
-    return;
-  }
-  cartItems.forEach(item => {
-    cartContainer.innerHTML += `
-      <p>Product ID: ${item.fields.productId.stringValue} | Quantity: ${item.fields.quantity.integerValue}</p>
-    `;
-  });
-}
 
 async function addToWishlist(productId){
   if(!window.currentUserId) return alert("Login first");
@@ -285,17 +257,20 @@ async function renderCart() {
 
       buyNowBtn.onclick = () => {
         const cartItemsData = carts.map(c => {
-          const prodId = c.fields.productId.stringValue;
-          const quantity = parseInt(c.fields.quantity.integerValue);
-          const prod = allProducts.find(p => p.productId === prodId);
-          return {
-            productId: prodId,
-            title: prod.title,
-            price: prod.price,
-            quantity: quantity,
-            qty: prod.stock || prod.qty || 0
-          };
-        });
+        const prodId = c.fields.productId.stringValue;
+        const quantity = parseInt(c.fields.quantity.integerValue);
+        const prod = allProducts.find(p => p.productId === prodId);
+        return {
+          cartId: c.name.split('/').pop(),
+          productId: prodId,
+          title: prod.title,
+          price: prod.price,
+          quantity: quantity,
+          qty: prod.stock || prod.qty || 0,
+          docId: prod.docId 
+        };
+      });
+
         openOrderModal(cartItemsData);
       };
     }
@@ -471,9 +446,10 @@ document.getElementById('confirmPaymentBtn').addEventListener('click', async () 
     alert('Please fill all delivery details.');
     return;
   }
-
+      const orderId = 'ORD-' + Date.now();
+      const paymentId = 'PAY-' + Date.now();
   const orderData = {
-    orderId: 'ORD-' + Date.now(),
+    orderId,
     userId: 'UID123', 
     products: currentOrderItems.map(item => ({
       productId: item.productId,
@@ -488,26 +464,48 @@ document.getElementById('confirmPaymentBtn').addEventListener('click', async () 
     orderDate: new Date().toISOString()
   };
 
-  await fetch(`https://firestore.googleapis.com/v1/projects/YOUR_PROJECT_ID/databases/(default)/documents/orders`, {
+  await fetch(`https://firestore.googleapis.com/v1/projects/firestore-demo-4daa4/databases/(default)/documents/orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ fields: toFirestoreFields(orderData) })
   });
+  const paymentData = {
+    paymentId,
+    orderId,
+    userId: window.currentUserId,
+    amountPaid: currentOrderTotal,
+    paymentMode,
+    status: 'success',
+    paymentDate: new Date().toISOString(),
+    transactionId: 'TXN-' + Date.now()
+  };
+
+  await fetch(`${BASE_URL}/payments?documentId=${paymentId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: toFirestoreFields(paymentData) })
+  });
+
+ for (let item of currentOrderItems) {
+  const newQty = item.qty - item.quantity;
+  item.qty = newQty;
+
+  await fetch(`${BASE_URL}/products/${item.docId}?updateMask.fieldPaths=qty`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: { qty: { integerValue: newQty } } })
+  });
+}
+
 
   for (let item of currentOrderItems) {
-    const newQty = item.qty - item.quantity;
-    item.qty = newQty;
-
-    await fetch(`https://firestore.googleapis.com/v1/projects/YOUR_PROJECT_ID/databases/(default)/documents/products/${item.productId}?updateMask.fieldPaths=qty`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: { qty: { integerValue: newQty } } })
-    });
-  }
+  await fetch(`${BASE_URL}/carts/${item.cartId}`, { method: "DELETE" });
+}
 
   document.getElementById('paymentModal').style.display = 'none';
   document.getElementById('orderConfirmationMsg').style.display = 'block';
-  document.getElementById('orderConfirmationMsg').textContent = '✅ Order Confirmed Successfully!';
+  document.getElementById('orderConfirmationMsg').textContent = ' Order Confirmed Successfully!';
+   renderCart();
 });
 
 function toFirestoreFields(obj) {
@@ -524,4 +522,3 @@ function toFirestoreFields(obj) {
   }
   return fields;
 }
-
