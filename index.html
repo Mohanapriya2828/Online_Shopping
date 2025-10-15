@@ -49,6 +49,28 @@
     <main>
       <div id="productList"></div>
       <div id="pagination"></div>
+      <div id="adminSection" style="display:none; padding:20px; border:1px solid #ccc; margin-top:20px;">
+  <h2>Admin Panel</h2>
+  <button id="addProductBtn">Add Product</button>
+
+  <div id="productFormContainer" style="display:none; margin-top:10px;">
+    <form id="productForm">
+      <input type="text" id="productId" placeholder="Product ID" required/><br/>
+      <input type="text" id="title" placeholder="Title" required/><br/>
+      <textarea id="description" placeholder="Description" required></textarea><br/>
+      <input type="number" id="price" placeholder="Price" required/><br/>
+      <input type="number" id="qty" placeholder="Quantity" required/><br/>
+      <input type="text" id="catId" placeholder="Category ID" required/><br/>
+      <input type="text" id="subCatId" placeholder="SubCategory ID" required/><br/>
+      <input type="text" id="imageUrl" placeholder="Image URL" required/><br/>
+      <input type="number" id="reviewCount" placeholder="Review Count" required/><br/>
+      <label>Active: <input type="checkbox" id="isActive" checked/></label><br/>
+      <button type="submit">Add Product</button>
+    </form>
+  </div>
+  <div id="adminProductList" style="margin-top:20px;"></div>
+</div>
+
 
       <div id="cartContainer" style="display:none; background:#fff; padding:20px; border:1px solid #ccc; position:absolute; top:80px; right:50px; width:300px; max-height:400px; overflow:hidden;">
         <h3>Your Cart</h3>
@@ -105,5 +127,6 @@
   <script src="Js_folder/firestore.js"></script>
   <script src="Js_folder/auth.js"></script>
   <script src="Js_folder/main.js"></script>
+  <script src="Js_folder/admin.js"></script>
 </body>
-</html>
+</html> 

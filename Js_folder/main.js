@@ -21,7 +21,6 @@ async function fetchAllProducts(){
   const res = await fetch(`${BASE_URL}/products`);
   const data = await res.json();
   return (data.documents||[]).map(d=>({
-    docId: d.name.split("/").pop(),
     catId: d.fields.catId.stringValue,
     subCatId: d.fields.subCatId.stringValue,
     title: d.fields.title.stringValue,
@@ -143,7 +142,7 @@ function renderProducts(){
       <img src="${p.image}" alt="${p.title}">
       <h4>${p.title}</h4>
       <p>Price: ₹${p.price}</p>
-      <p>Rating: ${p.rating} ⭐ | Stock: ${p.stock}</p>
+      <p>Rating: ${p.rating} ⭐ | Stock:${p.stock} </p>
       <button onclick="addToCart('${p.productId}')">Add to Cart</button>
       <button onclick="addToWishlist('${p.productId}')">Add to Wishlist</button>
     `;
@@ -266,8 +265,7 @@ async function renderCart() {
           title: prod.title,
           price: prod.price,
           quantity: quantity,
-          qty: prod.stock || prod.qty || 0,
-          docId: prod.docId 
+          qty: prod.stock || prod.qty || 0
         };
       });
 
@@ -448,9 +446,9 @@ document.getElementById('confirmPaymentBtn').addEventListener('click', async () 
   }
       const orderId = 'ORD-' + Date.now();
       const paymentId = 'PAY-' + Date.now();
-  const orderData = {
+      const orderData = {
     orderId,
-    userId: 'UID123', 
+    userId: window.currentUserId, 
     products: currentOrderItems.map(item => ({
       productId: item.productId,
       quantity: item.quantity
@@ -486,16 +484,16 @@ document.getElementById('confirmPaymentBtn').addEventListener('click', async () 
     body: JSON.stringify({ fields: toFirestoreFields(paymentData) })
   });
 
- for (let item of currentOrderItems) {
-  const newQty = item.qty - item.quantity;
-  item.qty = newQty;
+//  for (let item of currentOrderItems) {
+//   const newQty = item.qty - item.quantity;
+//   item.qty = newQty;
 
-  await fetch(`${BASE_URL}/products/${item.docId}?updateMask.fieldPaths=qty`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fields: { qty: { integerValue: newQty } } })
-  });
-}
+//   await fetch(`${BASE_URL}/products/${item.docId}?updateMask.fieldPaths=qty`, {
+//     method: 'PATCH',
+//     headers: { 'Content-Type': 'application/json' },
+//     body: JSON.stringify({ fields: { qty: { integerValue: newQty } } })
+//   });
+// }
 
 
   for (let item of currentOrderItems) {

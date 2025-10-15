@@ -1,6 +1,7 @@
 let userToken = null;
 let currentUserId = null;
 
+
 async function signup() {
   const email = document.getElementById("signupEmail").value;
   const password = document.getElementById("signupPassword").value;
@@ -69,12 +70,13 @@ async function googleLogin() {
         userToken = data.idToken;
         currentUserId = data.localId;
         window.currentUserId = currentUserId;
-window.userToken = userToken;
+        window.userToken = userToken;
         showHomePage(data.email);
       }
     } catch(err){ console.error(err); }
   }, 500);
 }
+
 
 function logout() {
   userToken = null;
@@ -83,11 +85,31 @@ function logout() {
   document.getElementById("authSection").style.display="block";
 }
 
-function showHomePage(email){
-  document.getElementById("authSection").style.display="none";
-  document.getElementById("homeSection").style.display="block";
-  renderSidebar();
+async function showHomePage(email){
+  document.getElementById("authSection").style.display = "none";
+  document.getElementById("homeSection").style.display = "block"; 
+
+  try {
+    const res = await fetch(`https://firestore.googleapis.com/v1/projects/firestore-demo-4daa4/databases/(default)/documents/users/${currentUserId}`, {
+      headers: { Authorization: `Bearer ${userToken}` }
+    });
+    const data = await res.json();
+    const role = data.fields.role.stringValue;
+
+    if(role === "admin"){
+      document.getElementById("adminSection").style.display = "block";
+      if(document.getElementById("productList")) document.getElementById("productList").style.display = "none";
+    } else {
+      document.getElementById("adminSection").style.display = "none";
+      renderSidebar();
+    }
+  } catch(err) {
+    console.error("Error fetching user role:", err);
+    alert("Failed to get user role.");
+  }
 }
+
+
 
 document.addEventListener("DOMContentLoaded", ()=>{
   const loginBtn = document.getElementById("loginBtn");
