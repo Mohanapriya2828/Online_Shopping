@@ -2,6 +2,8 @@ const PAGE_SIZE = 6;
 let allProducts = [];
 let filteredProducts = [];
 let currentPage = 1;
+let currentOrderItems = []; 
+let currentOrderTotal = 0;
 
 async function fetchCategories(){
   const res = await fetch(`${BASE_URL}/categories`);
@@ -233,33 +235,74 @@ document.addEventListener("DOMContentLoaded", ()=>{
 async function renderCart() {
   if (!window.currentUserId) return alert("Login first");
 
-  const res = await fetch(`${BASE_URL}/carts`);
-  const data = await res.json();
-  const carts = (data.documents || []).filter(c => c.fields.userId.stringValue === window.currentUserId);
+  try {
+    const res = await fetch(`${BASE_URL}/carts`);
+    const data = await res.json();
+    const carts = (data.documents || []).filter(
+      c => c.fields.userId.stringValue === window.currentUserId
+    );
 
-  const cartItems = document.getElementById("cartItems");
-  cartItems.innerHTML = "";
+    const cartItems = document.getElementById("cartItems");
+    const cartFooter = document.getElementById("cartFooter");
+    cartItems.innerHTML = "";
 
-  if (carts.length === 0) {
-    cartItems.innerHTML = "<p>Your cart is empty.</p>";
-  } else {
+    if (carts.length === 0) {
+      cartItems.innerHTML = "<p>Your cart is empty.</p>";
+      if (cartFooter) cartFooter.innerHTML = "";
+      return;
+    }
+
     carts.forEach(c => {
       const prodId = c.fields.productId.stringValue;
-      const quantity = c.fields.quantity.integerValue;
-
+      const quantity = parseInt(c.fields.quantity.integerValue);
       const prod = allProducts.find(p => p.productId === prodId);
+
       if (prod) {
         const div = document.createElement("div");
         div.className = "cart-item";
+        div.style.borderBottom = "1px solid #ddd";
+        div.style.padding = "5px 0";
         div.innerHTML = `
-          <p><strong>${prod.title}</strong> - ₹${prod.price} x ${quantity}</p>
+          <p><strong>${prod.title}</strong> - ₹${prod.price} × ${quantity}</p>
         `;
         cartItems.appendChild(div);
       }
     });
-  }
 
-  document.getElementById("cartContainer").style.display = "block";
+    if (cartFooter) {
+      cartFooter.innerHTML = "";
+      const buyNowBtn = document.createElement("button");
+      buyNowBtn.id = "buyNowBtn";
+      buyNowBtn.textContent = "Buy Now";
+      buyNowBtn.style.marginTop = "10px";
+      buyNowBtn.style.width = "100%";
+      buyNowBtn.style.padding = "10px";
+      buyNowBtn.style.backgroundColor = "#4CAF50";
+      buyNowBtn.style.color = "#fff";
+      buyNowBtn.style.border = "none";
+      buyNowBtn.style.cursor = "pointer";
+      cartFooter.appendChild(buyNowBtn);
+
+      buyNowBtn.onclick = () => {
+        const cartItemsData = carts.map(c => {
+          const prodId = c.fields.productId.stringValue;
+          const quantity = parseInt(c.fields.quantity.integerValue);
+          const prod = allProducts.find(p => p.productId === prodId);
+          return {
+            productId: prodId,
+            title: prod.title,
+            price: prod.price,
+            quantity: quantity,
+            qty: prod.stock || prod.qty || 0
+          };
+        });
+        openOrderModal(cartItemsData);
+      };
+    }
+  } catch (err) {
+    console.error("Error rendering cart:", err);
+    alert("Failed to load cart");
+  }
 }
 
 async function fetchWishlist() {
@@ -383,3 +426,102 @@ function setupSearch() {
     renderProducts();
   });
 }
+
+
+function openOrderModal(cartItems) {
+  const modal = document.getElementById('orderModal');
+  const listDiv = document.getElementById('orderProductsList');
+  const totalSpan = document.getElementById('orderTotalAmount');
+
+  listDiv.innerHTML = '';
+  currentOrderTotal = 0;
+  currentOrderItems = cartItems;
+
+  cartItems.forEach(item => {
+    const div = document.createElement('div');
+    div.style.marginBottom = '5px';
+    div.innerHTML = `${item.title} (x${item.quantity}) - ₹${item.price * item.quantity}`;
+    listDiv.appendChild(div);
+
+    currentOrderTotal += item.price * item.quantity;
+  });
+
+  totalSpan.textContent = currentOrderTotal;
+  modal.style.display = 'flex';
+}
+
+document.getElementById('proceedToPaymentBtn').addEventListener('click', () => {
+  document.getElementById('paymentModal').style.display = 'flex';
+});
+
+document.getElementById('closeOrderModalBtn').onclick = () => {
+  document.getElementById('orderModal').style.display = 'none';
+};
+document.getElementById('closePaymentModalBtn').onclick = () => {
+  document.getElementById('paymentModal').style.display = 'none';
+};
+
+document.getElementById('confirmPaymentBtn').addEventListener('click', async () => {
+  const paymentMode = document.getElementById('paymentMode').value;
+  const name = document.getElementById('orderName').value;
+  const address = document.getElementById('orderAddress').value;
+  const phone = document.getElementById('orderPhone').value;
+
+  if (!name || !address || !phone) {
+    alert('Please fill all delivery details.');
+    return;
+  }
+
+  const orderData = {
+    orderId: 'ORD-' + Date.now(),
+    userId: 'UID123', 
+    products: currentOrderItems.map(item => ({
+      productId: item.productId,
+      quantity: item.quantity
+    })),
+    totalAmount: currentOrderTotal,
+    discountAmount: 0,
+    finalAmount: currentOrderTotal,
+    paymentMode,
+    couponCode: '',
+    status: 'placed',
+    orderDate: new Date().toISOString()
+  };
+
+  await fetch(`https://firestore.googleapis.com/v1/projects/YOUR_PROJECT_ID/databases/(default)/documents/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: toFirestoreFields(orderData) })
+  });
+
+  for (let item of currentOrderItems) {
+    const newQty = item.qty - item.quantity;
+    item.qty = newQty;
+
+    await fetch(`https://firestore.googleapis.com/v1/projects/YOUR_PROJECT_ID/databases/(default)/documents/products/${item.productId}?updateMask.fieldPaths=qty`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { qty: { integerValue: newQty } } })
+    });
+  }
+
+  document.getElementById('paymentModal').style.display = 'none';
+  document.getElementById('orderConfirmationMsg').style.display = 'block';
+  document.getElementById('orderConfirmationMsg').textContent = '✅ Order Confirmed Successfully!';
+});
+
+function toFirestoreFields(obj) {
+  const fields = {};
+  for (let key in obj) {
+    const val = obj[key];
+    if (typeof val === 'string') fields[key] = { stringValue: val };
+    else if (typeof val === 'number') fields[key] = { integerValue: val };
+    else if (Array.isArray(val)) {
+      fields[key] = { arrayValue: { values: val.map(v => ({ mapValue: { fields: toFirestoreFields(v) } })) } };
+    } else if (typeof val === 'object') {
+      fields[key] = { mapValue: { fields: toFirestoreFields(val) } };
+    }
+  }
+  return fields;
+}
+
