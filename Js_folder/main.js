@@ -220,6 +220,7 @@ async function renderSidebar(){
 
 document.addEventListener("DOMContentLoaded", ()=>{
   renderSidebar();
+  setupSearch();
 });
 
 async function renderCart() {
@@ -300,3 +301,18 @@ document.getElementById("cartBtn").addEventListener("click", () => {
   renderCart(); 
 });
 
+function setupSearch() {
+  const searchInput = document.getElementById("searchBar");
+  searchInput.addEventListener("input", () => {
+    const query = searchInput.value.toLowerCase().trim();
+    if (query === "") {
+      filteredProducts = [...allProducts]; 
+    } else {
+      filteredProducts = allProducts.filter(p =>
+        p.title.toLowerCase().includes(query)
+      );
+    }
+    currentPage = 1;
+    renderProducts();
+  });
+}
